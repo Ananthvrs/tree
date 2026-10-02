@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>தென்னை மரம் ஏறும் கவுண்டர் (ஏறி இறங்குதல் முறை)</title>
+    <title>தென்னை மரம் ஏறும் துல்லியமான கவுண்டர்</title>
     <style>
         :root {
             --primary: #2e7d32;
@@ -94,23 +94,16 @@
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
             border-radius: 12px;
-            padding: 25px;
+            padding: 20px;
             margin-bottom: 20px;
             box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
         }
 
         .counter-title {
-            font-size: 15px;
+            font-size: 14px;
             text-transform: uppercase;
             letter-spacing: 1px;
             opacity: 0.9;
-        }
-
-        .counter-value {
-            font-size: 64px;
-            font-weight: bold;
-            margin: 10px 0;
-            line-height: 1;
         }
 
         .stats-grid {
@@ -135,7 +128,7 @@
         }
 
         .stat-val {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             color: var(--primary-dark);
         }
@@ -155,10 +148,11 @@
         }
 
         .total-trees-val {
-            font-size: 28px;
+            font-size: 48px;
             font-weight: bold;
             color: var(--primary-dark);
             margin-top: 5px;
+            line-height: 1;
         }
 
         .btn-container {
@@ -185,18 +179,6 @@
         .btn-start {
             background-color: var(--primary);
             color: white;
-        }
-
-        .btn-climb {
-            background-color: #2e7d32;
-            color: white;
-            font-size: 16px;
-        }
-
-        .btn-descend {
-            background-color: #c62828;
-            color: white;
-            font-size: 16px;
         }
 
         .btn-reset {
@@ -269,8 +251,8 @@
 
     <!-- Current Round Status Display -->
     <div class="counter-card">
-        <div class="counter-title">தற்போது மரம் ஏறுபவர்  </div>
-        <div id="statusDisplay" style="font-size: 20px; font-weight: bold; margin: 15px 0;">தரையில் உள்ளார்</div>
+        <div class="counter-title">தற்போதைய நிலை</div>
+        <div id="statusDisplay" style="font-size: 18px; font-weight: bold; margin-top: 10px;">தரையில்தான் உள்ளார்</div>
     </div>
 
     <!-- Stats Grid -->
@@ -281,7 +263,7 @@
         </div>
         <div class="stat-box">
             <div class="stat-label">ஆன்லைன் நிலை</div>
-            <div id="syncStatus" class="stat-val" style="color: #2e7d32; font-size: 14px;">சேமிக்கப்பட்டது</div>
+            <div id="syncStatus" class="stat-val" style="color: #2e7d32;">சேமிக்கப்பட்டது</div>
         </div>
     </div>
 
@@ -289,12 +271,6 @@
     <div class="total-trees-box">
         <div class="total-trees-title">முழுமையாக ஏறி இறங்கிய மொத்த மரங்கள்</div>
         <div id="counterValue" class="total-trees-val">0</div>
-    </div>
-
-    <!-- Manual Control Buttons -->
-    <div class="btn-container">
-        <button class="btn-climb" onclick="manualClimb()">ஏறிவிட்டேன் (Up)</button>
-        <button class="btn-descend" onclick="manualDescend()">இறங்கிவிட்டேன் (Down)</button>
     </div>
 
     <!-- Control Buttons -->
@@ -311,7 +287,7 @@
 
 <script>
     let treeCount = 0;
-    let hasClimbedUp = false; // மரம் ஏறிவிட்டாரா என்பதைக் குறிக்க
+    let stage = 0; // 0: தரையில், 1: 2 மீட்டருக்கு மேல் ஏறிவிட்டார், 2: ஏறி இறங்கிவிட்டார்
     let currentHeight = 0;
     let hasPermissionGranted = false;
     
@@ -336,7 +312,8 @@
         const savedData = localStorage.getItem('coconut_count_' + worker);
         treeCount = savedData !== null ? parseInt(savedData) : 0;
         counterElement.textContent = treeCount;
-        hasClimbedUp = false;
+        stage = 0;
+        currentHeight = 0;
         statusDisplay.textContent = "தரையில்தான் உள்ளார்";
         logMessage(`தொழிலாளி தேர்ந்தெடுக்கப்பட்டார்: ${worker}`);
     });
@@ -371,46 +348,6 @@
         });
     }
 
-    // Manual Climb Action (Up)
-    function manualClimb() {
-        if (!workerSelect.value) {
-            alert('தயவுசெய்து முதலில் தொழிலாளி பெயரைத் தேர்ந்தெடுக்கவும்.');
-            return;
-        }
-        if (!hasClimbedUp) {
-            hasClimbedUp = true;
-            statusDisplay.textContent = "மரத்தில் ஏறியுள்ளார் 🌴";
-            currentHeight = 5.0;
-            heightElement.textContent = currentHeight.toFixed(1) + " மீ";
-            if (navigator.vibrate) navigator.vibrate(150);
-            logMessage('மரத்தில் ஏறியது பதிவு செய்யப்பட்டது. இப்போது இறங்கவும்.');
-        } else {
-            alert('ஏற்கனவே மரத்தில்தான் உள்ளீர்கள். முதலில் இறங்கிவிட்ட பொத்தானை அழுத்தவும்.');
-        }
-    }
-
-    // Manual Descend Action (Down - Completed Round)
-    function manualDescend() {
-        if (!workerSelect.value) {
-            alert('தயவுசெய்து முதலில் தொழிலாளி பெயரைத் தேர்ந்தெடுக்கவும்.');
-            return;
-        }
-        if (hasClimbedUp) {
-            treeCount++;
-            hasClimbedUp = false;
-            currentHeight = 0.0;
-            heightElement.textContent = currentHeight.toFixed(1) + " மீ";
-            counterElement.textContent = treeCount;
-            statusDisplay.textContent = "தரையில்தான் உள்ளார்";
-            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-            playBeep();
-            saveOnlineAndLocal();
-            logMessage(`மரம் ஏறி இறங்கியது உறுதி! மொத்த மரங்கள்: ${treeCount}`);
-        } else {
-            alert('நீங்கள் இன்னும் மரத்தில் ஏறவில்லை!');
-        }
-    }
-
     function resetCounter() {
         if (!workerSelect.value) {
             alert('தயவுசெய்து முதலில் தொழிலாளி பெயரைத் தேர்ந்தெடுக்கவும்.');
@@ -418,7 +355,7 @@
         }
         if (confirm('கவுண்டரை மீட்டமைக்க விரும்புகிறீர்களா?')) {
             treeCount = 0;
-            hasClimbedUp = false;
+            stage = 0;
             currentHeight = 0.0;
             counterElement.textContent = treeCount;
             heightElement.textContent = "0.0 மீ";
@@ -481,29 +418,32 @@
 
         if (dt > 0.1 || dt <= 0) return;
 
-        // Automatic Sensor detection logic for climbing and descending cycle
-        if (accZ > 9.81 + 1.2) {
-            // Climbing Up
-            if (!hasClimbedUp) {
-                hasClimbedUp = true;
-                currentHeight = 5.0;
+        // சாதாரண நடையைத் தவிர்க்க கடுமையான வரம்பு (Strict Threshold)
+        // 1. இரண்டு மீட்டருக்கு மேல் மேலே ஏறும் பொழுது (Upward acceleration jump)
+        if (accZ > 9.81 + 1.8) {
+            if (stage === 0) {
+                stage = 1;
+                currentHeight = 4.5; // 2 மீட்டருக்கு மேல் உள்ள உயரம்
                 heightElement.textContent = currentHeight.toFixed(1) + " மீ";
                 statusDisplay.textContent = "மரத்தில் ஏறியுள்ளார் 🌴";
-                logMessage('சென்சார்: மரம் ஏறுவது கண்டறியப்பட்டது.');
+                logMessage('2 மீட்டருக்கு மேல் ஏறுவது சென்சார் மூலம் கண்டறியப்பட்டது.');
             }
-        } else if (accZ < 9.81 - 1.2) {
-            // Descending Down (Completing the cycle)
-            if (hasClimbedUp) {
+        } 
+        // 2. மரம் ஏறிவிட்டு மீண்டும் கீழே இறங்கும் பொழுது (Downward acceleration)
+        else if (accZ < 9.81 - 1.8) {
+            if (stage === 1) {
+                // ஏறிவிட்டு இறங்கிவிட்டதால் இப்போது ஒரு முழு மரம் கவுண்ட் ஆகும்
+                stage = 0;
                 treeCount++;
-                hasClimbedUp = false;
                 currentHeight = 0.0;
                 heightElement.textContent = currentHeight.toFixed(1) + " மீ";
                 counterElement.textContent = treeCount;
                 statusDisplay.textContent = "தரையில்தான் உள்ளார்";
+                
                 if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
                 playBeep();
                 saveOnlineAndLocal();
-                logMessage(`சென்சார்: ஏறி இறங்கியது உறுதியானது! மொத்த மரங்கள்: ${treeCount}`);
+                logMessage(`மரம் ஏறி இறங்கியது உறுதி! மொத்த மரங்கள்: ${treeCount}`);
             }
         }
     }
