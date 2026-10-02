@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>தென்னை மர ஏறுதல் கவுண்டர்</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter & Tamil support -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans Tamil', 'Poppins', sans-serif;
+        }
+        .tree-bg {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        }
+    </style>
+</head>
+<body class="tree-bg min-h-screen text-slate-800 flex flex-col justify-between">
+
+    <header class="bg-emerald-700 text-white shadow-md p-4 text-center rounded-b-2xl">
+        <h1 class="text-2xl font-bold flex items-center justify-center gap-2">
+            <i class="fa-solid fa-tree"></i> தென்னை மர ஏறுதல் கவுண்டர்
+        </h1>
+        <p class="text-xs text-emerald-100 mt-1">சென்சார் அல்லது பட்டன் மூலம் மரங்களை கணக்கிடுங்கள்</p>
+    </header>
+
+    <main class="container mx-auto px-4 py-6 max-w-md flex-grow flex flex-col justify-center">
+        
+        <!-- Status Card -->
+        <div class="bg-white rounded-2xl shadow-lg p-5 mb-5 border border-emerald-100 text-center">
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-sm font-semibold text-slate-500">சென்சார் நிலை:</span>
+                <span id="sensorStatus" class="px-3 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-700">நிறுத்தப்பட்டுள்ளது</span>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 my-4">
+                <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-200">
+                    <p class="text-xs text-emerald-600 font-medium">ஏறியது (Climbed)</p>
+                    <h2 id="climbCount" class="text-3xl font-bold text-emerald-800 mt-1">0</h2>
+                </div>
+                <div class="bg-blue-50 p-3 rounded-xl border border-blue-200">
+                    <p class="text-xs text-blue-600 font-medium">இறங்கியது (Descended)</p>
+                    <h2 id="descendCount" class="text-3xl font-bold text-blue-800 mt-1">0</h2>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 flex justify-around text-center">
+                <div>
+                    <p class="text-xs text-slate-400">மொத்த மரங்கள்</p>
+                    <span id="totalTrees" class="text-xl font-bold text-slate-700">0</span>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-400">தற்போதைய நிலை</p>
+                    <span id="currentState" class="text-sm font-bold text-emerald-600">தரை மட்டம்</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visual Tree Indicator -->
+        <div class="bg-white rounded-2xl shadow-lg p-5 mb-5 border border-emerald-100 text-center relative overflow-hidden">
+            <h3 class="text-sm font-semibold text-slate-600 mb-3">மரத்தின் நிலை வரைபடம்</h3>
+            <div id="treeVisual" class="h-32 bg-emerald-50 rounded-xl flex flex-col items-center justify-center border-2 border-dashed border-emerald-300 transition-all duration-300">
+                <i id="treeIcon" class="fa-solid fa-tree text-emerald-600 text-4xl mb-2 transition-transform duration-300"></i>
+                <span id="visualText" class="text-xs font-semibold text-emerald-700">மரத்திற்கு கீழே உள்ளீர்கள்</span>
+            </div>
+        </div>
+
+        <!-- Control Buttons -->
+        <div class="space-y-3">
+            <button id="toggleSensorBtn" onclick="toggleSensor()" class="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-play"></i> சென்சாரை இயக்கு (Start Sensor)
+            </button>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="simulateClimb()" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-semibold py-2 px-3 rounded-xl border border-emerald-300 text-sm transition flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-arrow-up"></i> ஏறு (Climb)
+                </button>
+                <button onclick="simulateDescend()" class="bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold py-2 px-3 rounded-xl border border-blue-300 text-sm transition flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-arrow-down"></i> இறங்கு (Descend)
+                </button>
+            </div>
+
+            <button onclick="resetCounts()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2 px-4 rounded-xl text-sm transition">
+                <i class="fa-solid fa-rotate-right"></i> மீட்டமை (Reset)
+            </button>
+        </div>
+
+    </main>
+
+    <footer class="text-center py-4 text-xs text-slate-500 border-t border-slate-200">
+        தென்னை மர ஏறுதல் கணக்கீட்டு செயலி &copy; 2026
+    </footer>
+
+    <!-- Message Modal Box -->
+    <div id="messageModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl p-5 max-w-xs w-full text-center shadow-2xl">
+            <div id="modalIcon" class="text-4xl text-emerald-600 mb-2">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h4 id="modalTitle" class="font-bold text-lg mb-1">தகவல்</h4>
+            <p id="modalText" class="text-sm text-slate-600 mb-4">செய்தி இங்கே...</p>
+            <button onclick="closeModal()" class="w-full bg-emerald-600 text-white py-2 rounded-xl font-bold">சரி (OK)</button>
+        </div>
+    </div>
+
+    <script>
+        let climbCount = 0;
+        let descendCount = 0;
+        let isSensorActive = false;
+        let isClimbing = false;
+        let lastBeta = 0;
+
+        const climbEl = document.getElementById('climbCount');
+        const descendEl = document.getElementById('descendCount');
+        const totalEl = document.getElementById('totalTrees');
+        const statusEl = document.getElementById('sensorStatus');
+        const stateEl = document.getElementById('currentState');
+        const treeVisual = document.getElementById('treeVisual');
+        const treeIcon = document.getElementById('treeIcon');
+        const visualText = document.getElementById('visualText');
+        const toggleBtn = document.getElementById('toggleSensorBtn');
+
+        function showNotification(title, text, type = 'success') {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalText').innerText = text;
+            const iconDiv = document.getElementById('modalIcon');
+            if(type === 'success') {
+                iconDiv.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-600"></i>';
+            } else {
+                iconDiv.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-500"></i>';
+            }
+            document.getElementById('messageModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('messageModal').style.display = 'none';
+        }
+
+        function playBeep() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5 note
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.15);
+            } catch (e) {
+                console.log("Audio not supported or blocked");
+            }
+        }
+
+        function updateDisplay() {
+            climbEl.innerText = climbCount;
+            descendEl.innerText = descendCount;
+            totalEl.innerText = Math.max(climbCount, descendCount);
+        }
+
+        function simulateClimb() {
+            if (!isClimbing) {
+                isClimbing = true;
+                climbCount++;
+                stateEl.innerText = "மரத்தில் ஏறுகிறார்";
+                treeVisual.className = "h-32 bg-emerald-100 rounded-xl flex flex-col items-center justify-center border-2 border-emerald-500 transition-all duration-300";
+                treeIcon.className = "fa-solid fa-tree text-emerald-700 text-5xl mb-2 transition-transform duration-300 -translate-y-2";
+                visualText.innerText = "மரத்தின் உச்சியில் / ஏறிக்கொண்டிருக்கிறார்";
+                playBeep();
+                updateDisplay();
+            } else {
+                showNotification("தகவல்", "ஏற்கனவே மரத்தில் உள்ளீர்கள்!", "warning");
+            }
+        }
+
+        function simulateDescend() {
+            if (isClimbing) {
+                isClimbing = false;
+                descendCount++;
+                stateEl.innerText = "தரை மட்டம்";
+                treeVisual.className = "h-32 bg-emerald-50 rounded-xl flex flex-col items-center justify-center border-2 border-dashed border-emerald-300 transition-all duration-300";
+                treeIcon.className = "fa-solid fa-tree text-emerald-600 text-4xl mb-2 transition-transform duration-300 translate-y-0";
+                visualText.innerText = "மரத்திற்கு கீழே வந்துவிட்டீர்கள்";
+                playBeep();
+                updateDisplay();
+            } else {
+                showNotification("தகவல்", "நீங்கள் ஏற்கனவே தரையில் உள்ளீர்கள்!", "warning");
+            }
+        }
+
+        function toggleSensor() {
+            if (!isSensorActive) {
+                if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    DeviceOrientationEvent.requestPermission()
+                        .then(response => {
+                            if (response === 'granted') {
+                                activateSensor();
+                            } else {
+                                showNotification("அனுமதி மறுக்கப்பட்டது", "சென்சார் அனுமதி வழங்கப்படவில்லை. கைமுறை பட்டன்களை பயன்படுத்தவும்.", "warning");
+                            }
+                        }).catch(console.error);
+                } else if ('DeviceOrientationEvent' in window) {
+                    activateSensor();
+                } else {
+                    showNotification("ஆதரிக்கப்படவில்லை", "உங்கள் சாதனத்தில் சென்சார் கிடைக்கவில்லை. கைமுறை பட்டன்களை பயன்படுத்தலாம்.", "warning");
+                }
+            } else {
+                deactivateSensor();
+            }
+        }
+
+        function activateSensor() {
+            isSensorActive = true;
+            statusEl.innerText = "இயக்கத்தில் உள்ளது";
+            statusEl.className = "px-3 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-700";
+            toggleBtn.innerHTML = '<i class="fa-solid fa-stop"></i> சென்சாரை நிறுத்து (Stop Sensor)';
+            toggleBtn.className = "w-full bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2";
+
+            window.addEventListener('deviceorientation', handleOrientation, true);
+        }
+
+        function deactivateSensor() {
+            isSensorActive = false;
+            statusEl.innerText = "நிறுத்தப்பட்டுள்ளது";
+            statusEl.className = "px-3 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-700";
+            toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> சென்சாரை இயக்கு (Start Sensor)';
+            toggleBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2";
+
+            window.removeEventListener('deviceorientation', handleOrientation, true);
+        }
+
+        function handleOrientation(event) {
+            let beta = event.beta; // Forward/backward tilt in degrees (-180 to 180)
+            
+            if (beta !== null) {
+                // If phone tilts forward significantly (e.g. climbing posture / looking up)
+                if (beta > 45 && !isClimbing) {
+                    simulateClimb();
+                } 
+                // If phone returns upright or tilts backward (descending posture)
+                else if (beta < 15 && isClimbing) {
+                    simulateDescend();
+                }
+            }
+        }
+
+        function resetCounts() {
+            climbCount = 0;
+            descendCount = 0;
+            isClimbing = false;
+            stateEl.innerText = "தரை மட்டம்";
+            treeVisual.className = "h-32 bg-emerald-50 rounded-xl flex flex-col items-center justify-center border-2 border-dashed border-emerald-300 transition-all duration-300";
+            treeIcon.className = "fa-solid fa-tree text-emerald-600 text-4xl mb-2 transition-transform duration-300";
+            visualText.innerText = "மரத்திற்கு கீழே உள்ளீர்கள்";
+            updateDisplay();
+            showNotification("மீட்டமைக்கப்பட்டது", "அனைத்து கவுண்டர்களும் சுழிக்கப்பட்டன.", "success");
+        }
+    </script>
+</body>
+</html>
