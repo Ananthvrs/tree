@@ -222,7 +222,7 @@
             <option value="SUPPAIYYA">SUPPAIYYA</option>
             <option value="MURUGAN">MURUGAN</option>
             <option value="SAKTHIVEL">SAKTHIVEL</option>
-            <option value="RAMESHH">RAMESH</option>
+            <option value="RAMESH">RAMESH</option>
             <option value="SELVAM">SELVAM</option>
             <option value="V.SEKAR">V.SEKAR</option>
             <option value="SEKAR">SEKAR</option>
@@ -267,9 +267,11 @@
 <script>
     let treeCount = 0;
     let isClimbing = false;
-    let baseAltitude = null;
     let currentHeight = 0;
     let hasPermissionGranted = false;
+    
+    // Your Apps Script URL
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx0KF9jQyVuJlbsLTAOLqEmMN0fUjsSb90XJ8ShwJ6wgKUYuRAFK26S4Dnf70Pc_HmR/exec";
 
     const workerSelect = document.getElementById('workerSelect');
     const counterElement = document.getElementById('counterValue');
@@ -283,17 +285,12 @@
         logBox.innerHTML = `[${timeStr}] ${msg}<br>` + logBox.innerHTML;
     }
 
-    // Load saved data when worker changes
     workerSelect.addEventListener('change', function() {
         const worker = workerSelect.value;
         const savedData = localStorage.getItem('coconut_count_' + worker);
-        if (savedData !== null) {
-            treeCount = parseInt(savedData);
-        } else {
-            treeCount = 0;
-        }
+        treeCount = savedData !== null ? parseInt(savedData) : 0;
         counterElement.textContent = treeCount;
-        logMessage(`தொழிலாளி மாற்றப்பட்டார்: ${worker}`);
+        logMessage(`தொழிலாளி தேர்ந்தெடுக்கப்பட்டார்: ${worker}`);
     });
 
     function saveOnlineAndLocal() {
@@ -303,18 +300,27 @@
         // Local Storage Save
         localStorage.setItem('coconut_count_' + worker, treeCount);
         
-        // Simulating Online Cloud Sync (Can be replaced with Google Apps Script / Firebase Webhook endpoint URL)
+        // Online Cloud Sync to Google Sheets
         syncStatus.textContent = "ஒத்திசைக்கிறது...";
-        setTimeout(() => {
+        
+        fetch(https://script.google.com/macros/s/AKfycbx0KF9jQyVuJlbsLTAOLqEmMN0fUjsSb90XJ8ShwJ6wgKUYuRAFK26S4Dnf70Pc_HmR/exec, {
+            method: 'POST',
+            mode: 'no-cors', // Required for Google Apps Script Web App endpoints to bypass CORS restrictions
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                worker: worker, 
+                count: treeCount, 
+                timestamp: new Date().toLocaleString() 
+            })
+        }).then(() => {
             syncStatus.textContent = "ஆன்லைனில் சேமிக்கப்பட்டது";
-            // Example POST request structure to Google Sheets Web App endpoint:
-            /*
-            fetch('YOUR_GOOGLE_APPS_SCRIPT_URL', {
-                method: 'POST',
-                body: JSON.stringify({worker: worker, count: treeCount, timestamp: new Date()})
-            });
-            */
-        }, 500);
+            logMessage(`கூகுள் ஷீட்டில் சேவ் ஆனது: ${worker} - ${treeCount}`);
+        }).catch(err => {
+            syncStatus.textContent = "பிழை (Offline)";
+            logMessage(`ஆன்லைன் சேமிப்பில் பிழை: ${err}`);
+        });
     }
 
     function resetCounter() {
@@ -330,16 +336,13 @@
         }
     }
 
-    // Auto-start sensor permission handling on load
+    // Auto-start sensor initialization on load if supported natively
     window.addEventListener('load', () => {
         logMessage('பக்கம் திறக்கப்பட்டது. சென்சார் இயக்க தயாராக உள்ளது.');
-        // Automatically try initializing if permissions are already granted or supported natively
-        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-            // iOS requires explicit click, handled by button
-            sensorStatus.textContent = "சென்சார் இயக்க 'சென்சார் இயக்கு' பொத்தானை அழுத்தவும்";
-        } else {
-            // Android / Standard Browsers - Auto Start
+        if (!(typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function')) {
             initSensors();
+        } else {
+            sensorStatus.textContent = "சென்சார் இயக்க 'சென்சார் இயக்கு' பொத்தானை அழுத்தவும்";
         }
     });
 
@@ -362,7 +365,7 @@
 
     function initSensors() {
         hasPermissionGranted = true;
-        sensorStatus.textContent = "சென்சார் aktiv-ல் உள்ளது (செயலில் உள்ளது)";
+        sensorStatus.textContent = "சென்சார் செயலில் உள்ளது (Active)";
         sensorStatus.classList.add('active');
         logMessage('மோஷன் சென்சார் வெற்றிகரமாக இணைக்கப்பட்டது.');
 
@@ -373,13 +376,12 @@
         }
     }
 
-    let verticalVelocity = 0;
     let lastTime = Date.now();
 
     function handleMotion(event) {
         if (!hasPermissionGranted) return;
 
-        const accZ = event.accelerationIncludingGravity.z; // Vertical acceleration component approx
+        const accZ = event.accelerationIncludingGravity.z;
         if (accZ === null || accZ === undefined) return;
 
         const currentTime = Date.now();
@@ -388,12 +390,11 @@
 
         if (dt > 0.1 || dt <= 0) return;
 
-        // Filtering noise and estimating height via vertical acceleration integration
-        // Threshold check for climbing upwards (> 2 meters check)
-        if (accZ > 9.81 + 1.2) { // Upward motion acceleration surge
+        // Upward motion detection threshold (> 2 meters check)
+        if (accZ > 9.81 + 1.2) {
             if (!isClimbing) {
                 isClimbing = true;
-                currentHeight += 2.1; // Simulated incremental height gain crossing 2m threshold
+                currentHeight += 2.1;
                 heightElement.textContent = currentHeight.toFixed(1) + " மீ";
 
                 if (currentHeight >= 2.0 && currentHeight < 2.5) {
@@ -402,10 +403,10 @@
                     if (navigator.vibrate) navigator.vibrate(200);
                     playBeep();
                     saveOnlineAndLocal();
-                    logMessage(`மரம் ஏறுதல் உறுதி செய்யப்பட்டது! புதிய கவுண்ட்: ${treeCount}`);
+                    logMessage(`மரம் ஏறுதல் உறுதி! புதிய கவுண்ட்: ${treeCount}`);
                 }
             }
-        } else if (accZ < 9.81 - 1.2) { // Descending or resting back
+        } else if (accZ < 9.81 - 1.2) {
             if (isClimbing && currentHeight > 0) {
                 currentHeight = Math.max(0, currentHeight - 2.1);
                 heightElement.textContent = currentHeight.toFixed(1) + " மீ";
@@ -428,9 +429,7 @@
             gain.gain.setValueAtTime(0.1, ctx.currentTime);
             osc.start();
             osc.stop(ctx.currentTime + 0.15);
-        } catch (e) {
-            // Audio context fallback if restricted by browser autoplay policies
-        }
+        } catch (e) {}
     }
 </script>
 
